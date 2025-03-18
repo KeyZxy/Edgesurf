@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
@@ -10,17 +11,20 @@ public class PlayerController : MonoBehaviour
     public float blinkDuration = 2f; // 闪烁持续时间
     public float invincibleDuration = 3f; // 无敌时间
     public float invincibleAlpha = 0.5f; // 无敌期间的透明度
-    private bool isInvincible = false; // 是否处于无敌状态
+    public bool isInvincible = false; // 是否处于无敌状态
     private SpriteRenderer playerRenderer; // 玩家的渲染组件
     private Color originalColor; // 玩家原始颜色
     private Collider2D playerCollider; // 玩家的碰撞器
 
     public float Hp = 30f;
     public float maxHp = 30f;
-
+   
+    private Vector2 lastPosition; // 记录玩家上一帧的位置
+    public float totalDistance; // 记录玩家的总移动距离
+    private float MaxDistance;//距离存档
 
     private bool isMoving = true; // 是否正在移动
-    private Vector2 moveDirection = Vector2.down; // 初始移动方向为向下
+    private Vector2 moveDirection ; // 初始移动方向为向下
 
     public float mouseSensitivity = 0.1f; // 鼠标灵敏度
     private Vector2 lastMousePosition; // 上一帧鼠标位置
@@ -28,13 +32,15 @@ public class PlayerController : MonoBehaviour
     private float mouseXOffset = 0f; // 鼠标水平偏移量
     private float directionThreshold = 50f; // 方向切换阈值
     private float deadZone = 1f; // 避免微小移动触发方向切换
-    private bool isInputEnabled = true; // 是否允许玩家输入
+    public bool isInputEnabled = true; // 是否允许玩家输入
     private float rotationSmoothSpeed = 10f; // 旋转平滑速度
 
     public int boostItemCount = 3; // 拥有的加速道具数量
     public float boostDuration = 2f; // 加速持续时间
     public float boostSpeedMultiplier = 2f; // 加速时的速度乘数
     private bool isBoosting = false; // 是否正在加速
+
+    private TrailRenderer trail;  // 引用拖尾组件
 
     private void Start()
     {
@@ -43,6 +49,12 @@ public class PlayerController : MonoBehaviour
         playerCollider = GetComponent<Collider2D>();
         originalColor = playerRenderer.material.color; // 保存玩家原始颜色
         lastMousePosition = Input.mousePosition; // 初始化鼠标位置
+        lastPosition = rb.position; // 初始化玩家位置
+        totalDistance = 0f; // 移动距离初始化为0
+        trail = GetComponent<TrailRenderer>(); // 获取 Trail Renderer
+        trail.enabled = false; // 初始时禁用拖尾
+        
+        LoadMaxDistance(); // 加载最高分  
     }
 
     void Update()
@@ -54,6 +66,40 @@ public class PlayerController : MonoBehaviour
             HandleMovement();
             RotatePlayer(); // 根据移动方向旋转角色
         }
+        // 计算玩家移动距离
+        CalculateDistance();
+    }
+    // 计算玩家移动距离
+    private void CalculateDistance()
+    {
+        Vector2 currentPosition = rb.position; // 获取当前位置
+
+        // 计算当前位置与上一帧位置之间的距离
+        float distanceThisFrame = Vector2.Distance(currentPosition, lastPosition);
+
+        // 累加总距离
+        totalDistance += distanceThisFrame;
+
+        // 更新上一帧位置
+        lastPosition = currentPosition;
+    }
+
+    private void LoadMaxDistance()
+    {
+        MaxDistance = PlayerPrefs.GetFloat("newMax", 0f);
+        Debug.Log("Loaded Max Distance: " + MaxDistance);
+    }
+    public float GetScore()
+    {
+        return totalDistance;
+    }
+    public void SetmaxDistance(float maxdis)
+    {
+        MaxDistance=maxdis;
+    }
+    public float GetmaxDistance()
+    {
+        return MaxDistance;
     }
     public Vector2 GetMoveDirection()
     {
@@ -63,11 +109,11 @@ public class PlayerController : MonoBehaviour
     // 设置新的移动方向
     public void SetMoveDirection(Vector2 newDirection)
     {
-        moveDirection = newDirection.normalized; // 确保方向是单位向量
-        rb.velocity = moveDirection * walkSpeed; // 立即更新速度
+        moveDirection = newDirection;
     }
     void HandleKeyboardInput()
     {
+        
         // 按下 W 键停止移动
         if (Input.GetKeyDown(KeyCode.W))
         {
@@ -131,7 +177,7 @@ public class PlayerController : MonoBehaviour
         // 限制鼠标偏移量的范围
         mouseXOffset = Mathf.Clamp(mouseXOffset, -2 * directionThreshold, 2 * directionThreshold);
 
-        // 如果鼠标往上移动超过死区，停止移动
+        // 如果鼠标往上移动停止移动
         if (mouseDeltaY > 2f)
         {
             isMoving = false;
@@ -141,7 +187,7 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        // 如果鼠标往下移动超过死区，恢复移动
+        // 如果鼠标往下移动恢复移动
         if (mouseDeltaY < -deadZone)
         {
             isMoving = true;
@@ -201,7 +247,7 @@ public class PlayerController : MonoBehaviour
             transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, rotationSmoothSpeed * Time.deltaTime);
         }
     }
-
+    
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.gameObject.CompareTag("Stone") && !isInvincible)
@@ -211,12 +257,15 @@ public class PlayerController : MonoBehaviour
             isInputEnabled = false; // 禁用玩家输入
             StartCoroutine(BlinkAndInvincible());
         }
-        
+        if (collision.gameObject.CompareTag("Bounce") )
+        {
+            //
+        }
 
     }
     private void OnTriggerEnter2D(Collider2D other)
     {
-         if (other.gameObject.CompareTag("Light"))
+        if (other.gameObject.CompareTag("Light"))
         {
             Destroy(other.gameObject);
             boostItemCount++;
@@ -237,15 +286,17 @@ public class PlayerController : MonoBehaviour
         }
        
     }
-    //加速
-    IEnumerator BoostSpeed()
+    
+
+      //加速
+      IEnumerator BoostSpeed()
     {
         isBoosting = true; // 开始加速  
         float originalSpeed = walkSpeed; // 保存原始速度  
         walkSpeed *= boostSpeedMultiplier; // 加速 
-
+        trail.enabled = true; // 启用拖尾
         yield return new WaitForSeconds(boostDuration); // 等待加速持续时间  
-
+        trail.enabled = false; // 关闭拖尾
         walkSpeed = originalSpeed; // 恢复原始速度  
         isBoosting = false; // 结束加速  
     }
@@ -264,7 +315,8 @@ public class PlayerController : MonoBehaviour
 
         // 确保闪烁结束后玩家可见
         playerRenderer.enabled = true;
-        isInputEnabled = true; // 启用玩家输入
+        // 启用玩家输入
+        isInputEnabled = true; 
         // 设置无敌期间的透明度
         Color invincibleColor = originalColor;
         invincibleColor.a = invincibleAlpha;
