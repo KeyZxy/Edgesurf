@@ -92,7 +92,8 @@ MonoBehaviour:
   player: {fileID: 0}
   MaxScore: 0
   speed: 5
-  text: {fileID: 4066685170061496155}
+  text1: {fileID: 0}
+  text2: {fileID: 0}
   defaultColor: {r: 0, g: 1, b: 0, a: 1}
   newRecordColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!1 &2738827604715941782

@@ -41,7 +41,7 @@ public class PlayerController : MonoBehaviour
     private bool isBoosting = false; // 是否正在加速
 
     private TrailRenderer trail;  // 引用拖尾组件
-
+    public bool isdead = false;
     private void Start()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -68,6 +68,10 @@ public class PlayerController : MonoBehaviour
         }
         // 计算玩家移动距离
         CalculateDistance();
+        if (Hp <= 0)
+        {
+            isdead = true;
+        }
     }
     // 计算玩家移动距离
     private void CalculateDistance()
@@ -92,6 +96,18 @@ public class PlayerController : MonoBehaviour
     public float GetScore()
     {
         return totalDistance;
+    }
+    public float GetHp()
+    {
+        return Hp;
+    }
+    public float GetMaxHp()
+    {
+        return maxHp;
+    }
+    public int Getboost()
+    {
+        return boostItemCount;
     }
     public void SetmaxDistance(float maxdis)
     {
@@ -259,7 +275,8 @@ public class PlayerController : MonoBehaviour
         }
         if (collision.gameObject.CompareTag("Bounce") )
         {
-            //
+            moveDirection = -moveDirection; // 反转方向
+            rb.velocity = moveDirection * walkSpeed * speedMultiplier; // 直接更新速度
         }
 
     }

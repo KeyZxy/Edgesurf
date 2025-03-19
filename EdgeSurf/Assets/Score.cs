@@ -11,7 +11,8 @@ public class Score : MonoBehaviour
     private float ScoreBefore; // 记录上一帧的分数  
     public float speed = 5f; // 过渡速度  
     private Image image;
-    public Text text;
+    public Text text1; 
+    public Text text2;
     public Color defaultColor = Color.green; // 默认血条颜色
     public Color newRecordColor = Color.yellow; // 新高分时的血条颜色
 
@@ -38,9 +39,12 @@ public class Score : MonoBehaviour
         if (currentScore > MaxScore)
         {
                 image.color = newRecordColor; // 设置血条颜色为黄色
-                Debug.Log("新高分！"); // 输出新高分提示
+                text2.text="新高分！"; // 输出新高分提示
         }
-
+        else
+        {
+            text2.text = "";
+        }
         // 如果游戏未暂停，进行平滑过渡  
         if (Time.timeScale > 0)
         {
@@ -61,9 +65,9 @@ public class Score : MonoBehaviour
 
     void UpdateHealthText()
     {
-        if (text != null)
+        if (text1!= null)
         {
-            text.text = Mathf.RoundToInt(ScoreBefore).ToString() + " / " + Mathf.RoundToInt(MaxScore).ToString();
+            text1.text = Mathf.RoundToInt(ScoreBefore).ToString() + " / " + Mathf.RoundToInt(MaxScore).ToString();
         }
     }
 }

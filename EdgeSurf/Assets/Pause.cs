@@ -8,17 +8,23 @@ public class Pause : MonoBehaviour
 {
     public GameObject pauseMenuUI; // 暂停菜单的UI面板  
     public GameObject mainMenuUI;
+    public GameObject DeadmenuUI;
     public static bool GameIsPaused = false;
     public PlayerController playerController;
     void Start()
     {
       pauseMenuUI.SetActive(false);
       mainMenuUI.SetActive(false);
+       DeadmenuUI.SetActive(false);
     }
 
     void Update()
     {
-       
+        if (playerController.isdead == true) {
+            Time.timeScale = 0f;
+            DeadmenuUI.SetActive (true);
+            playerController.isInputEnabled = true;
+        }
         // 按下ESC键时触发暂停  
         if (Input.GetKeyDown(KeyCode.Escape)|| Input.GetKeyDown(KeyCode.Space)) {
             if (GameIsPaused)
@@ -48,7 +54,7 @@ public class Pause : MonoBehaviour
         SaveGameProgress();
         mainMenuUI.SetActive(true);
         pauseMenuUI.SetActive(false );
-        
+        DeadmenuUI.SetActive(false) ;
     }
     void SaveGameProgress()
     {
